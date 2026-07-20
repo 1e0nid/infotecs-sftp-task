@@ -1,9 +1,8 @@
 package org.example;
 
 public class Main {
-    public static int main(String[] args) {
+    public static void main(String[] args) {
         CliApplication cliApplication = new CliApplication();
         cliApplication.start();
-        return 1;
     }
 }

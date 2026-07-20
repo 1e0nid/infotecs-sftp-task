@@ -1,13 +1,13 @@
 package org.example;
 
-import com.jcraft.jsch.ChannelSftp;
-import com.jcraft.jsch.JSch;
-import com.jcraft.jsch.JSchException;
-import com.jcraft.jsch.Session;
+import com.jcraft.jsch.*;
 
 public class SftpService {
     private Session session;
     private ChannelSftp channelSftp;
+
+    private final String pathServerDir = "upload/test.json";
+    private final String pathDownloadDir = "./sftp-domain-client/download/";
 
     public boolean connect(String host, Integer port, String user, String password) {
         try {
@@ -24,6 +24,10 @@ public class SftpService {
             disconnect();
             throw new RuntimeException(e);
         }
+    }
+
+    public void downloadJson() throws SftpException {
+        channelSftp.get(pathServerDir, pathDownloadDir);
     }
 
     public void disconnect() {

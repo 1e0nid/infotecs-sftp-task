@@ -1,5 +1,7 @@
 package org.example;
 
+import com.jcraft.jsch.SftpException;
+
 import java.util.Scanner;
 
 public class CliApplication {
@@ -33,15 +35,24 @@ public class CliApplication {
     }
 
     private boolean connectToServer() {
-        System.out.println("Enter the host, port, username, and password to connect to the server");
-        System.out.print("host: ");
-        String host = scanner.nextLine();
-        System.out.print("port: ");
-        int port = Integer.parseInt(scanner.nextLine());
-        System.out.print("username: ");
-        String username = scanner.nextLine();
-        System.out.print("password: ");
-        String password = scanner.nextLine();
+        System.out.println("Enter the host, port, username, and password to connect to the server (press Enter for defaults):");
+
+        System.out.print("host [127.0.0.1]: ");
+        String hostInput = scanner.nextLine().trim();
+        String host = hostInput.isEmpty() ? "127.0.0.1" : hostInput;
+
+        System.out.print("port [22]: ");
+        String portInput = scanner.nextLine().trim();
+        int port = portInput.isEmpty() ? 22 : Integer.parseInt(portInput);
+
+        System.out.print("username [user]: ");
+        String usernameInput = scanner.nextLine().trim();
+        String username = usernameInput.isEmpty() ? "user" : usernameInput;
+
+        System.out.print("password [pass]: ");
+        String passwordInput = scanner.nextLine().trim();
+        String password = passwordInput.isEmpty() ? "pass" : passwordInput;
+
         System.out.println();
         return sftpService.connect(host, port, username, password);
     }
@@ -57,6 +68,11 @@ public class CliApplication {
         switch (item) {
             case 1:
                 System.out.println(1);
+                try {
+                    sftpService.downloadJson();
+                } catch (SftpException e) {
+                    printError("no such file");
+                }
                 break;
             case 2:
                 System.out.println(2);
@@ -72,6 +88,7 @@ public class CliApplication {
                 break;
             case 6:
                 System.out.println(6);
+                sftpService.disconnect();
                 stop();
                 break;
         }

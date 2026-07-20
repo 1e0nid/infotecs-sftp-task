@@ -5,5 +5,7 @@ services:
     image: atmoz/sftp
     container_name: sftp-server
     ports:
-      - "2222:22"
+      - "22:22"
+    volumes:
+      - ./upload:/home/user/upload
     command: user:pass:1001
