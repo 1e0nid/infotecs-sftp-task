@@ -28,7 +28,7 @@ public class CliApplication {
     }
 
     private void printError(String err) {
-        System.out.println("Error: " + err);
+        System.err.println("Error: " + err);
         System.out.println();
     }
 
@@ -46,8 +46,15 @@ public class CliApplication {
         return sftpService.connect(host, port, username, password);
     }
 
-    private void changeDirectory(int num) {
-        switch (num) {
+    private void stop() {
+        sftpService.disconnect();
+        scanner.close();
+        isRunning = false;
+    }
+
+    private void selectItem() {
+        int item = Integer.parseInt(scanner.nextLine());
+        switch (item) {
             case 1:
                 System.out.println(1);
                 break;
@@ -65,6 +72,7 @@ public class CliApplication {
                 break;
             case 6:
                 System.out.println(6);
+                stop();
                 break;
         }
     }
@@ -76,12 +84,13 @@ public class CliApplication {
                     isNotConnected = false;
                 }
             } catch (RuntimeException e) {
-                printError("failed to connect to the server");
+                printError("failed to connect");
             }
         }
         while (isRunning) {
             printMenu();
+            System.out.println("Select an item");
+            selectItem();
         }
-
     }
 }
