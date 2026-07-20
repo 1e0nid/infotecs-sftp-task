@@ -69,7 +69,6 @@ public class CliApplication {
         }
     }
 
-
     public void start() {
         while (isNotConnected) {
             try {
