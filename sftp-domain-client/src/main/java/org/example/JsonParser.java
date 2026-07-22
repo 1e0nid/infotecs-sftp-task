@@ -2,6 +2,7 @@ package org.example;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -33,4 +34,33 @@ public class JsonParser {
 
         return parseJson;
     }
+
+    public void buildJson(Map<String, String> map, String path) throws IOException {
+        StringBuilder sb = new StringBuilder();
+        sb.append("{\n");
+        sb.append("  \"addresses\": [\n");
+
+        int size = map.size();
+        int count = 0;
+
+        for (Map.Entry<String, String> entry : map.entrySet()) {
+            count++;
+            sb.append("    {\n");
+            sb.append("      \"domain\": \"").append(entry.getKey()).append("\",\n");
+            sb.append("      \"ip\": \"").append(entry.getValue()).append("\"\n");
+            sb.append("    }");
+
+            // Запятая нужна у всех элементов, кроме последнего
+            if (count < size) {
+                sb.append(",");
+            }
+            sb.append("\n");
+        }
+
+        sb.append("  ]\n");
+        sb.append("}");
+
+        Files.write(Paths.get(path), sb.toString().getBytes(StandardCharsets.UTF_8));
+    }
+
 }

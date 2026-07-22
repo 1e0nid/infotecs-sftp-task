@@ -8,6 +8,7 @@ public class SftpService {
 
     private final String remoteFilePath = AppConfig.get("sftp.remote.path");
     private final String localDownloadDir = AppConfig.get("local.download.dir");
+    private final String jsonFilename = AppConfig.get("local.hosts.filename");
 
     public boolean connect(String host, Integer port, String user, String password) {
         try {
@@ -31,6 +32,10 @@ public class SftpService {
 
     public void downloadJson() throws SftpException {
         channelSftp.get(remoteFilePath, localDownloadDir);
+    }
+
+    public void uploadFile() throws SftpException {
+        channelSftp.put(localDownloadDir + jsonFilename, remoteFilePath, ChannelSftp.OVERWRITE);
     }
 
     public void disconnect() {

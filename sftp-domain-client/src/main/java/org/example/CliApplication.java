@@ -121,10 +121,32 @@ public class CliApplication {
                 }
                 break;
             case 4:
-                System.out.println(4);
+                try {
+                    sftpService.downloadJson();
+                    System.out.println("write domain: ");
+                    String domain = scanner.nextLine().trim();
+                    System.out.println("write ip: ");
+                    String ip = scanner.nextLine().trim();
+                    domainService.addPair(domain, ip);
+                    sftpService.uploadFile();
+                } catch (SftpException e) {
+                    printError("no such file");
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
                 break;
             case 5:
-                System.out.println(5);
+                try {
+                    sftpService.downloadJson();
+                    System.out.println("write domain or ip: ");
+                    String input = scanner.nextLine().trim();
+                    domainService.removePair(input);
+                    sftpService.uploadFile();
+                } catch (SftpException e) {
+                    printError("no such file");
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
                 break;
             case 6:
                 System.out.println(6);
