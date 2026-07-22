@@ -12,7 +12,6 @@ import java.util.regex.Pattern;
 
 public class JsonParser {
 
-    // Каждый элемент массива "addresses" — простой блок { ... } без вложенных объектов
     private static final Pattern OBJECT_PATTERN = Pattern.compile("\\{([^{}]*)}");
     private static final Pattern DOMAIN_PATTERN = Pattern.compile("\"domain\"\\s*:\\s*\"([^\"]*)\"");
     private static final Pattern IP_PATTERN = Pattern.compile("\"ip\"\\s*:\\s*\"([^\"]*)\"");

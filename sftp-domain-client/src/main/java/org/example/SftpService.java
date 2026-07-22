@@ -20,7 +20,6 @@ public class SftpService {
     private final String localDownloadDir = AppConfig.get("local.download.dir");
     private final String jsonFilename = AppConfig.get("local.hosts.filename");
 
-    /** Только устанавливает соединение. Скачивание файла — отдельная операция. */
     public void connect(String host, int port, String user, String password) throws JSchException {
         JSch jsch = new JSch();
         session = jsch.getSession(user, host, port);

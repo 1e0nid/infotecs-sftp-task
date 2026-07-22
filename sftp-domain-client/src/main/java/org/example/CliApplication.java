@@ -118,7 +118,6 @@ public class CliApplication {
             char[] pwd = console.readPassword("Пароль: ");
             return pwd == null ? "" : new String(pwd);
         }
-        // Консоль недоступна (например, запуск из IDE) — вводим как обычно
         System.out.print("Пароль: ");
         return scanner.nextLine();
     }

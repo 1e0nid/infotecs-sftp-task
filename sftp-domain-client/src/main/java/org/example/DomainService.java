@@ -22,7 +22,6 @@ public class DomainService {
         return Paths.get(jsonPath, jsonFilename).toString();
     }
 
-    /** Пары домен-адрес, отсортированные по домену (требование задания). */
     public Map<String, String> getAllMapping() throws IOException {
         return new TreeMap<>(jsonParser.parse(filePath()));
     }
@@ -43,10 +42,6 @@ public class DomainService {
         return Optional.empty();
     }
 
-    /**
-     * Добавляет новую пару домен-адрес.
-     * @throws IllegalArgumentException домен/ip пустые, ip некорректный, домен или ip уже существуют.
-     */
     public void addPair(String domainRaw, String ipRaw) throws IOException {
         String domain = normalizeDomain(domainRaw);
         String ip = ipRaw == null ? "" : ipRaw.trim();
