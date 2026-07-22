@@ -1,0 +1,45 @@
+set timeout 15
+
+set host     [lindex $argv 0]
+set port     [lindex $argv 1]
+set user     [lindex $argv 2]
+set password [lindex $argv 3]
+set jar_path [lindex $argv 4]
+
+if { $jar_path eq "" } {
+    set jar_path "../../sftp-domain-client/target/sftp-domain-client.jar"
+}
+
+spawn java -jar $jar_path
+
+expect "Адрес хоста:"
+send "$host\r"
+
+expect "Порт:"
+send "$port\r"
+
+expect "Логин:"
+send "$user\r"
+
+expect "Пароль:"
+send "$password\r"
+
+expect ">"
+send "1\r"
+
+expect {
+    "->" {
+        puts "\nOK: список пар выведен"
+    }
+    "список пар пуст" {
+        puts "\nOK: список пуст (это тоже валидный ответ)"
+    }
+    timeout {
+        puts "\nFAIL: не дождались ответа от клиента"
+        exit 1
+    }
+}
+
+expect ">"
+send "6\r"
+expect eof
