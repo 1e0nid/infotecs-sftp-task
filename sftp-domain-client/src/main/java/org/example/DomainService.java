@@ -13,10 +13,15 @@ public class DomainService {
     private final String jsonFilename;
 
     public DomainService() {
-        this.jsonParser = new JsonParser();
-        this.jsonPath = AppConfig.get("local.download.dir");
-        this.jsonFilename = AppConfig.get("local.hosts.filename");
+        this(AppConfig.get("local.download.dir"), AppConfig.get("local.hosts.filename"));
     }
+
+    public DomainService(String jsonPath, String jsonFilename) {
+        this.jsonParser = new JsonParser();
+        this.jsonPath = jsonPath;
+        this.jsonFilename = jsonFilename;
+    }
+
 
     private String filePath() {
         return Paths.get(jsonPath, jsonFilename).toString();
