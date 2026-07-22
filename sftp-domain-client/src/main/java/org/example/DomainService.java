@@ -1,66 +1,111 @@
 package org.example;
 
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.Map;
+import java.util.Optional;
+import java.util.TreeMap;
 
 public class DomainService {
+
     private final JsonParser jsonParser;
-    private final String jsonPath = AppConfig.get("local.download.dir");
-    private final String jsonFilename = AppConfig.get("local.hosts.filename");
+    private final String jsonPath;
+    private final String jsonFilename;
 
     public DomainService() {
-        jsonParser = new JsonParser();
+        this.jsonParser = new JsonParser();
+        this.jsonPath = AppConfig.get("local.download.dir");
+        this.jsonFilename = AppConfig.get("local.hosts.filename");
     }
 
+    private String filePath() {
+        return Paths.get(jsonPath, jsonFilename).toString();
+    }
+
+    /** Пары домен-адрес, отсортированные по домену (требование задания). */
     public Map<String, String> getAllMapping() throws IOException {
-        return jsonParser.parse(jsonPath + jsonFilename);
+        return new TreeMap<>(jsonParser.parse(filePath()));
     }
 
-    public String getIp(String domain) throws IOException {
-        return jsonParser.parse(jsonPath + jsonFilename).get(domain);
+    public Optional<String> getIp(String domain) throws IOException {
+        String key = normalizeDomain(domain);
+        return Optional.ofNullable(jsonParser.parse(filePath()).get(key));
     }
 
-    public String getDomain(String ip) throws IOException {
-        Map<String, String> mapJson = jsonParser.parse(jsonPath + jsonFilename);
-        for (Map.Entry<String, String> entry : mapJson.entrySet()) {
-            if (entry.getValue().equals(ip)) {
-                return entry.getKey();
+    public Optional<String> getDomain(String ip) throws IOException {
+        String value = ip == null ? "" : ip.trim();
+        Map<String, String> map = jsonParser.parse(filePath());
+        for (Map.Entry<String, String> entry : map.entrySet()) {
+            if (entry.getValue().equalsIgnoreCase(value)) {
+                return Optional.of(entry.getKey());
             }
         }
-        return null;
+        return Optional.empty();
     }
 
-    public void addPair(String domain, String ip) throws IOException {
-        Map<String, String> mapJson = jsonParser.parse(jsonPath + jsonFilename);
-        mapJson.put(domain, ip);
-        jsonParser.buildJson(mapJson, jsonPath + jsonFilename);
-    }
+    /**
+     * Добавляет новую пару домен-адрес.
+     * @throws IllegalArgumentException домен/ip пустые, ip некорректный, домен или ip уже существуют.
+     */
+    public void addPair(String domainRaw, String ipRaw) throws IOException {
+        String domain = normalizeDomain(domainRaw);
+        String ip = ipRaw == null ? "" : ipRaw.trim();
 
-    public void removePair(String identifier) throws IOException {
-        Map<String, String> mapJson = jsonParser.parse(jsonPath + jsonFilename);
-
-        if (identifier == null || identifier.trim().isEmpty()) {
-            return;
+        if (domain.isEmpty()) {
+            throw new IllegalArgumentException("домен не может быть пустым");
+        }
+        if (!IpValidator.isValidIPv4(ip)) {
+            throw new IllegalArgumentException("некорректный IPv4-адрес: " + ipRaw);
         }
 
-        String target = identifier.trim();
-        String domainToRemove = null;
+        Map<String, String> map = jsonParser.parse(filePath());
 
-        if (mapJson.containsKey(target)) {
-            mapJson.remove(target);
-        } else {
-            for (Map.Entry<String, String> entry : mapJson.entrySet()) {
-                if (target.equalsIgnoreCase(entry.getValue())) {
-                    domainToRemove = entry.getKey();
-                    break;
-                }
+        if (map.containsKey(domain)) {
+            throw new IllegalArgumentException("такой домен уже существует: " + domain);
+        }
+        if (map.containsValue(ip)) {
+            throw new IllegalArgumentException("такой IP-адрес уже используется: " + ip);
+        }
+
+        map.put(domain, ip);
+        jsonParser.buildJson(map, filePath());
+    }
+
+    /** @return true, если пара была найдена и удалена. */
+    public boolean removePair(String identifierRaw) throws IOException {
+        if (identifierRaw == null || identifierRaw.trim().isEmpty()) {
+            return false;
+        }
+
+        String identifier = identifierRaw.trim();
+        String domainKey = normalizeDomain(identifier);
+
+        Map<String, String> map = jsonParser.parse(filePath());
+
+        if (map.containsKey(domainKey)) {
+            map.remove(domainKey);
+            jsonParser.buildJson(map, filePath());
+            return true;
+        }
+
+        String foundDomain = null;
+        for (Map.Entry<String, String> entry : map.entrySet()) {
+            if (entry.getValue().equalsIgnoreCase(identifier)) {
+                foundDomain = entry.getKey();
+                break;
             }
         }
 
-        if (domainToRemove != null) {
-            mapJson.remove(domainToRemove);
+        if (foundDomain == null) {
+            return false;
         }
 
-        jsonParser.buildJson(mapJson, jsonPath + jsonFilename);
+        map.remove(foundDomain);
+        jsonParser.buildJson(map, filePath());
+        return true;
+    }
+
+    private String normalizeDomain(String domain) {
+        return domain == null ? "" : domain.trim().toLowerCase();
     }
 }

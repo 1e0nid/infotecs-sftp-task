@@ -2,7 +2,12 @@ package org.example;
 
 public class Main {
     public static void main(String[] args) {
-        CliApplication cliApplication = new CliApplication();
-        cliApplication.start();
+        try {
+            CliApplication cliApplication = new CliApplication();
+            cliApplication.start();
+        } catch (Throwable t) {
+            System.err.println("Критическая ошибка: " + t.getMessage());
+            System.exit(1);
+        }
     }
 }

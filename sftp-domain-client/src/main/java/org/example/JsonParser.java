@@ -1,41 +1,64 @@
 package org.example;
 
 import java.io.IOException;
-import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class JsonParser {
-    private static final Pattern ADDRESS_PATTERN = Pattern.compile(
-            "\"domain\"\\s*:\\s*\"([^\"]+)\"\\s*,\\s*\"ip\"\\s*:\\s*\"([^\"]+)\""
-    );
+
+    // Каждый элемент массива "addresses" — простой блок { ... } без вложенных объектов
+    private static final Pattern OBJECT_PATTERN = Pattern.compile("\\{([^{}]*)}");
+    private static final Pattern DOMAIN_PATTERN = Pattern.compile("\"domain\"\\s*:\\s*\"([^\"]*)\"");
+    private static final Pattern IP_PATTERN = Pattern.compile("\"ip\"\\s*:\\s*\"([^\"]*)\"");
 
     public Map<String, String> parse(String pathStr) throws IOException {
         Path path = Paths.get(pathStr);
 
-        String jsonContent = new String(Files.readAllBytes(path));
-
-        Map<String, String> parseJson = new HashMap<>();
-
-        Matcher matcher = ADDRESS_PATTERN.matcher(jsonContent);
-
-        while (matcher.find()) {
-            String domain = matcher.group(1);
-            String ip = matcher.group(2);
-
-            parseJson.put(domain, ip);
+        if (!Files.exists(path)) {
+            return new LinkedHashMap<>();
         }
 
-        return parseJson;
+        String jsonContent = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
+        Map<String, String> result = new LinkedHashMap<>();
+
+        Matcher objectMatcher = OBJECT_PATTERN.matcher(jsonContent);
+        while (objectMatcher.find()) {
+            String block = objectMatcher.group(1);
+
+            Matcher domainMatcher = DOMAIN_PATTERN.matcher(block);
+            Matcher ipMatcher = IP_PATTERN.matcher(block);
+
+            if (domainMatcher.find() && ipMatcher.find()) {
+                String domain = domainMatcher.group(1).trim().toLowerCase();
+                String ip = ipMatcher.group(1).trim();
+
+                if (domain.isEmpty()) {
+                    System.err.println("Пропущена запись без домена: " + block.trim());
+                    continue;
+                }
+                if (!IpValidator.isValidIPv4(ip)) {
+                    System.err.println("Пропущена запись с некорректным IP: " + block.trim());
+                    continue;
+                }
+                result.put(domain, ip);
+            }
+        }
+
+        return result;
     }
 
-    public void buildJson(Map<String, String> map, String path) throws IOException {
+    public void buildJson(Map<String, String> map, String pathStr) throws IOException {
+        Path path = Paths.get(pathStr);
+        if (path.getParent() != null) {
+            Files.createDirectories(path.getParent());
+        }
+
         StringBuilder sb = new StringBuilder();
         sb.append("{\n");
         sb.append("  \"addresses\": [\n");
@@ -49,8 +72,6 @@ public class JsonParser {
             sb.append("      \"domain\": \"").append(entry.getKey()).append("\",\n");
             sb.append("      \"ip\": \"").append(entry.getValue()).append("\"\n");
             sb.append("    }");
-
-            // Запятая нужна у всех элементов, кроме последнего
             if (count < size) {
                 sb.append(",");
             }
@@ -60,7 +81,6 @@ public class JsonParser {
         sb.append("  ]\n");
         sb.append("}");
 
-        Files.write(Paths.get(path), sb.toString().getBytes(StandardCharsets.UTF_8));
+        Files.write(path, sb.toString().getBytes(StandardCharsets.UTF_8));
     }
-
 }
