@@ -6,8 +6,8 @@ public class SftpService {
     private Session session;
     private ChannelSftp channelSftp;
 
-    private final String pathServerDir = "upload/test.json";
-    private final String pathDownloadDir = "./sftp-domain-client/download/";
+    private final String remoteFilePath = AppConfig.get("sftp.remote.path");
+    private final String localDownloadDir = AppConfig.get("local.download.dir");
 
     public boolean connect(String host, Integer port, String user, String password) {
         try {
@@ -19,15 +19,18 @@ public class SftpService {
 
             channelSftp = (ChannelSftp) session.openChannel("sftp");
             channelSftp.connect();
+            downloadJson();
             return true;
         } catch (JSchException e) {
             disconnect();
+            throw new RuntimeException(e);
+        } catch (SftpException e) {
             throw new RuntimeException(e);
         }
     }
 
     public void downloadJson() throws SftpException {
-        channelSftp.get(pathServerDir, pathDownloadDir);
+        channelSftp.get(remoteFilePath, localDownloadDir);
     }
 
     public void disconnect() {

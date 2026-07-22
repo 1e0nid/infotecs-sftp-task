@@ -2,12 +2,15 @@ package org.example;
 
 import com.jcraft.jsch.SftpException;
 
+import java.io.IOException;
+import java.util.Map;
 import java.util.Scanner;
 
 public class CliApplication {
 
     private final Scanner scanner;
     private final SftpService sftpService;
+    private final DomainService domainService;
 
     private boolean isRunning;
     private boolean isNotConnected;
@@ -15,6 +18,7 @@ public class CliApplication {
     public CliApplication() {
         scanner = new Scanner(System.in);
         sftpService = new SftpService();
+        domainService = new DomainService();
 
         isRunning = true;
         isNotConnected = true;
@@ -32,6 +36,22 @@ public class CliApplication {
     private void printError(String err) {
         System.err.println("Error: " + err);
         System.out.println();
+    }
+
+    private void printMap(Map<String, String> map) {
+        if (map == null || map.isEmpty()) {
+            System.out.println("no addresses");
+            return;
+        }
+
+        System.out.println("addresses:");
+        for (Map.Entry<String, String> entry : map.entrySet()) {
+            System.out.println(entry.getKey() + " -> " + entry.getValue());
+        }
+    }
+
+    private void printPair(String address1, String address2) {
+        System.out.println(address1 + " -> " + address2);
     }
 
     private boolean connectToServer() {
@@ -67,18 +87,38 @@ public class CliApplication {
         int item = Integer.parseInt(scanner.nextLine());
         switch (item) {
             case 1:
-                System.out.println(1);
                 try {
                     sftpService.downloadJson();
+                    printMap(domainService.getAllMapping());
                 } catch (SftpException e) {
                     printError("no such file");
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
                 }
                 break;
             case 2:
-                System.out.println(2);
+                try {
+                    sftpService.downloadJson();
+                    System.out.println("write domain: ");
+                    String domain = scanner.nextLine().trim();
+                    printPair(domain, domainService.getIp(domain));
+                } catch (SftpException e) {
+                    printError("no such file");
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
                 break;
             case 3:
-                System.out.println(3);
+                try {
+                    sftpService.downloadJson();
+                    System.out.println("write ip: ");
+                    String ip = scanner.nextLine().trim();
+                    printPair(ip, domainService.getDomain(ip));
+                } catch (SftpException e) {
+                    printError("no such file");
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
                 break;
             case 4:
                 System.out.println(4);
@@ -99,9 +139,13 @@ public class CliApplication {
             try {
                 if (connectToServer()) {
                     isNotConnected = false;
+                    sftpService.downloadJson();
                 }
             } catch (RuntimeException e) {
                 printError("failed to connect");
+            } catch (SftpException e) {
+                printError("not file");
+                stop();
             }
         }
         while (isRunning) {
